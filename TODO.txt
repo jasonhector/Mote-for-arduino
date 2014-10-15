@@ -1,0 +1,38 @@
+﻿-----------------
+Testing messages |
+-----------------
+Latch Control to pin13 - LED with index 101
+:,1,11,$L,101,1
+:,1,11,$L,101,1#
+-------------
+URGENT TODO: |
+-------------
+
+-> Mote::setupNetwork - the RFM Jeenode setup stuff - requires figuring out first
+-> change the diagrams [interface between sketch and mote class] from rxFromNetwork to scanNetwork
+
+->> develop analog read to have eng value in config and scale the read 1024 to this prior to sending to transport protocol.Will have to have the delta match this as well.
+
+------------------
+LESS URGENT TODO: |
+------------------
+-optimise the ioConfig array size - currently 50 for each io type eg bi[50]
+- populate Mote.AL_decode method
+-< the ioConfig structs are unnecessary > we can use the Io class to store the config items rather > need to integrate this > requires some design!! - Cant do this as the user sketch defines the config in the sketch, so lets just keep it separate and feed the io config into the Io classes during io class instantiation.
+
+
+
+
+------
+DONE: |
+------
+
+- make all the config io to be a list/array of structs ie. bi[0-n].id ; bo[0-n].pulsetime
+- define config structs for each io type
+->>>seems to point to the config structs i.e. bi_config::bi_config(){} Mote.cpp Line 246 - done
+->> combine config arrays and io arrays and store arrays into single structs for memory conserving [MakeIoObjects() and initIoStore()] - structs should be a combination of the above 3 arrays. Can then delete the Io class and the config arrays and iostore arrays - keep the io arrays consisting of the new structs
+->>>I think there are memory isues with the mote lib and sketch because as soon as I add new local vars or typ convert them I get erratic errors being thrown at runtime. Confirmed that it is the SRAM of 2K that string largely use up. I need to remove descriptions on config and other items.
+-> need to make the IO sizing configurable using mote.init() for Mote.h ie. biConfig bic[10];
+
+->>RTC_Millis rtc; doesn’t work as it complains of a type - use Internet to fix - NO SOLUTION hERE
+->> use pinid only and ditch id as they serve no real value ->> keep cause it gives flexibility, also needed for software pins like temp
