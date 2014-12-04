@@ -12,8 +12,56 @@
 #include "Conversions.h"
 #include "SoftwareSerial.h"
 //#include <RTClib.h>
+
+//Mote definitions
+#define B_INDICATION   "@I"
+#define B_STATUS       "@S"
+#define A_STATUS       "@A"
+#define LATCH_CONTROL  "$L"
+#define PULSE_CONTROL  "$P"
+
+//#define USE_DBG_SOFT
+#define USE_DBG_UART
+
+#define SERIAL_BAUD   115200
+
+#ifdef USE_DBG_SOFT
+  #include <SoftwareSerial.h>
+  #define DBG_RX 5
+  #define DBG_TX 6
+  #define dbg(input)   {DbgSer.print(input); delay(1);}
+  #define dbgln(input) {DbgSer.println(input); delay(1);}
+  #define dbgH(input, hex){DbgSer.print(input, hex); delay(1);}
+  #define dbglnH(input, hex){DbgSer.println(input, hex); delay(1);}
+  #define dbgF(input)   {DbgSer.print(F(input)); delay(1);}
+  #define dbglnF(input) {DbgSer.println(F(input)); delay(1);}
+#else
+  #define dbg(input);
+  #define dbgln(input);
+  #define dbgF(input);
+  #define dbglnF(input);
+  #define dbgH(input,hex);
+  #define dbglnH(input,hex);
+#endif
+#ifdef USE_DBG_UART
+  #define dbg(input)   {Serial.print(input); delay(1);}
+  #define dbgln(input) {Serial.println(input); delay(1);}
+  #define dbgH(input, hex){Serial.print(input, hex); delay(1);}
+  #define dbglnH(input, hex){Serial.println(input, hex); delay(1);}
+  #define dbgF(input)   {Serial.print(F(input)); delay(1);}
+  #define dbglnF(input) {Serial.println(F(input)); delay(1);}
+#else
+  #define dbg(input);
+  #define dbgln(input);
+  #define dbgF(input);
+  #define dbglnF(input);
+  #define dbgH(input,hex);
+  #define dbglnH(input,hex);
+#endif
+
 typedef void (*ioChangeCallbackT) (char* topic, char* payload, int payload_length);
 typedef int (*analogCallbackT) (uint8_t id);
+
 class Mote
 {
 public:
@@ -76,7 +124,9 @@ public:
 	ioChangeCallbackT callback;
 	analogCallbackT a_callback;
 	Conversions conversions;
-	SoftwareSerial DbgSer;
+    #ifdef USE_DBG_SOFT
+        SoftwareSerial DbgSer;
+    #endif
 	
 	char* topic;
 	char* payload;

@@ -8,8 +8,7 @@ Latch Control to pin13 - LED with index 101
 URGENT TODO: |
 -------------
 
--> Mote::setupNetwork - the RFM Jeenode setup stuff - requires figuring out first
--> change the diagrams [interface between sketch and mote class] from rxFromNetwork to scanNetwork
+->>> conversions.charA2int() is buggy!!
 
 ->> develop analog read to have eng value in config and scale the read 1024 to this prior to sending to transport protocol.Will have to have the delta match this as well.
 
@@ -36,3 +35,5 @@ DONE: |
 
 ->>RTC_Millis rtc; doesn’t work as it complains of a type - use Internet to fix - NO SOLUTION hERE
 ->> use pinid only and ditch id as they serve no real value ->> keep cause it gives flexibility, also needed for software pins like temp
+-> Mote::setupNetwork - the RFM Jeenode setup stuff - requires figuring out first
+-> change the diagrams [interface between sketch and mote class] from rxFromNetwork to scanNetwork
