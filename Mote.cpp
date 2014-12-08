@@ -8,21 +8,22 @@
 Mote::Mote():
 biSize(0),
 aiSize(0),
+boPSize(0),
 #ifdef USE_DBG_SOFT
     DbgSer(DBG_RX, DBG_TX),
 #endif
-boPSize(0),
 boLSize(0)
 {	
-
 	#ifdef USE_DBG_SOFT
         DbgSer.begin(SERIAL_BAUD);
     #endif
     #ifdef USE_DBG_UART
         Serial.begin(SERIAL_BAUD);
+        
     #endif
 	}	
 void Mote::init(){	
+	dbgln("Mote::init: ...");
 //reset the protocol variables
 	resetProtocol();
 	//reset the global topic and payload variables
@@ -33,10 +34,14 @@ void Mote::init(){
 	}
 void Mote::AL_encode(char* objType, int index){
 	//dbgln(F("Mote::AL_encode: ..."));
-	if((String(objType)=="@S")||(String(objType)=="@I")){ 
-		//Serial.println("Mote::AL_encode: post objType checking");
+	dbgF("Mote::AL_encode: object type = ");
+	dbgln(objType);
+	if((String(objType)=="@I")||(String(objType)=="@S")){ 	
+		//dbglnF("Mote::AL_encode: post objType checking");
 		//make topic
 		String str = String(al_srcNode)+"/"+String(al_destNode)+"/"+objType+"/"+bi[index].id;
+		//dbg(String("Mote::AL_encode: str<topic>="));
+		//Serial.println(str);
 		str.toCharArray(this->topicOut,str.length()+1);
 		dbgF("Mote::AL_encode: topicOut=");
 		dbgln(this->topicOut);
@@ -440,9 +445,9 @@ void Mote::scanIo(){
 	for(int j=0;j<biSize;j++){
 		//read value
 		 bi[j].value = digitalRead(bi[j].pinid);
-		//dbg("Mote::scanIo: bi.value[");
+		//dbgF("Mote::scanIo: bi.value[");
 		//dbg(j);
-		//dbg("]= ");
+		//dbgF("]= ");
 		//dbgln(bi[j].value);
 		//if different to store
 		if(bi[j].storeValue!= bi[j].value){
@@ -450,6 +455,10 @@ void Mote::scanIo(){
 			//if outside debounce
 			if(Scanner_isOutsideDebounce(j, bi[j].id)){
 				//dbgln("Mote::scanIo: post debounce");
+
+				//dbgF("Mote::scanIo: bi type = ");
+				//dbgln(bi[j].type);
+
 				//set store value
 				bi[j].storeValue=bi[j].value;
 				//encode and write to transport/network
@@ -458,10 +467,10 @@ void Mote::scanIo(){
 				//char payloadOut[this->payloadOut.length()+1];
 				//this->topicOut.toCharArray(topicOut,this->topicOut.length()+1);
 				//this->payloadOut.toCharArray(payloadOut,this->payloadOut.length()+1);
-				//dbg(F("Mote::scanIo: local topicOut="));
-				//dbgln(this->topicOut);
-				//dbg(F("Mote::scanIo: local payloadOut="));
-				//dbgln(this->payloadOut);
+				dbg(F("Mote::scanIo: local topicOut="));
+				dbgln(this->topicOut);
+				dbg(F("Mote::scanIo: local payloadOut="));
+				dbgln(this->payloadOut);
 				this->callback(this->topicOut, this->payloadOut, this->payloadLengthOut);
 			}
 		}
@@ -476,10 +485,10 @@ void Mote::scanIo(){
 		}else{
 			ai[j].value = analogRead(ai[j].pinid);
 		}
-		//Serial.print("Mote::scanIo: ai.value[");
-		//Serial.print(j);
-		//Serial.print("]= ");
-		//Serial.println(ai[j].value);
+		//dbgF("Mote::scanIo: ai.value[");
+		//dbg(j);
+		//dbgF("]= ");
+		//dbgln(ai[j].value);
 		//get store value
 		//if outside delta
 		if(Scanner_isOutsideDelta(ai[j].value, ai[j].storeValue, ai[j].delta)){
@@ -487,10 +496,10 @@ void Mote::scanIo(){
 			ai[j].storeValue=ai[j].value;
 			//encode and write to transport/network
 			AL_encode(ai[j].type,j);
-			//dbg(F("Mote::scanIo: local topicOut="));
-			//dbgln(this->topicOut);
-			//dbg(F("Mote::scanIo: local payloadOut="));
-			//dbgln(this->payloadOut);
+			dbg(F("Mote::scanIo: local topicOut="));
+			dbgln(this->topicOut);
+			dbg(F("Mote::scanIo: local payloadOut="));
+			dbgln(this->payloadOut);
 			this->callback(this->topicOut, this->payloadOut, this->payloadLengthOut);
 		}
 	}

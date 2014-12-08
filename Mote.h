@@ -8,9 +8,9 @@
 #define Mote_h
 
 #include "Arduino.h"
-#include "WString.h"
+//#include "WString.h"
 #include "Conversions.h"
-#include "SoftwareSerial.h"
+//#include "SoftwareSerial.h"
 //#include <RTClib.h>
 
 //Mote definitions
@@ -20,6 +20,7 @@
 #define LATCH_CONTROL  "$L"
 #define PULSE_CONTROL  "$P"
 
+//#define USE_DBG_NONE
 //#define USE_DBG_SOFT
 #define USE_DBG_UART
 
@@ -35,13 +36,6 @@
   #define dbglnH(input, hex){DbgSer.println(input, hex); delay(1);}
   #define dbgF(input)   {DbgSer.print(F(input)); delay(1);}
   #define dbglnF(input) {DbgSer.println(F(input)); delay(1);}
-#else
-  #define dbg(input);
-  #define dbgln(input);
-  #define dbgF(input);
-  #define dbglnF(input);
-  #define dbgH(input,hex);
-  #define dbglnH(input,hex);
 #endif
 #ifdef USE_DBG_UART
   #define dbg(input)   {Serial.print(input); delay(1);}
@@ -50,7 +44,8 @@
   #define dbglnH(input, hex){Serial.println(input, hex); delay(1);}
   #define dbgF(input)   {Serial.print(F(input)); delay(1);}
   #define dbglnF(input) {Serial.println(F(input)); delay(1);}
-#else
+#endif
+#ifdef USE_DBG_NONE
   #define dbg(input);
   #define dbgln(input);
   #define dbgF(input);
