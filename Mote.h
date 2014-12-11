@@ -9,7 +9,7 @@
 
 #include "Arduino.h"
 //#include "WString.h"
-#include "Conversions.h"
+//#include "Conversions.h"
 //#include "SoftwareSerial.h"
 //#include <RTClib.h>
 
@@ -20,9 +20,12 @@
 #define LATCH_CONTROL  "$L"
 #define PULSE_CONTROL  "$P"
 
-//#define USE_DBG_NONE
+#define TOPIC_LENGTH  31
+#define PAYLOAD_LENGTH  31
+
+#define USE_DBG_NONE
 //#define USE_DBG_SOFT
-#define USE_DBG_UART
+//#define USE_DBG_UART
 
 #define SERIAL_BAUD   115200
 
@@ -54,7 +57,7 @@
   #define dbglnH(input,hex);
 #endif
 
-typedef void (*ioChangeCallbackT) (char* topic, char* payload, int payload_length);
+typedef void (*ioChangeCallbackT) (char* topic, char* payload);
 typedef int (*analogCallbackT) (uint8_t id);
 
 class Mote
@@ -78,66 +81,64 @@ public:
 	//void AL_rx(volatile uint8_t* rfData, int size);
 	//void AL_confirmSequence();
 	void AL_encode(char* objType, int index);
-	bool AL_decode(const char* topic,const char* payload);
+	bool AL_decode(char* topic,char* payload);
 	//--DL Class--
 
-	void DL_sendToNetwork();
+	//void DL_sendToNetwork();
 	//--Scanner Class--
 	void scanIo();
 	bool Scanner_isOutsideDebounce(int index, int id);
 	bool Scanner_isOutsideDelta(int value, int storeValue, int delta);
 	//--Controller Class--
-	void execute(const char* topic,const char* payload);
-	void Controller_pulse(int index, String value);
-	void Controller_latch(int index, String value);
+	void execute(char* topic,char* payload);
+	void Controller_pulse(int index, int value);
+	void Controller_latch(int index, int value);
 	void resetProtocol();
-	void resetTopicAndPayload();
+	void resetTopicAndPayloadIn();
 	void resetTopicAndPayloadOut();
 	//--IoFactory Class--
-	void IoFactory_getValue();
+	//void IoFactory_getValue();
 	//Setups
 	void setupIo();
-	void setupNetwork();
+	//void setupNetwork();
 	//Ioconfig
 	void addBi(int id, int pinid, char* objType, int debounce);
 	void addAi(int id, int pinid, int delta);
 	void addBoL(int id, int pinid);
 	void addBoP(int id, int pinid);
 	//Main Loop Methods
-	void scanNetwork();
-	void watchdogCheck();
-	void initRTC();
+	//void scanNetwork();
+	//void watchdogCheck();
+	//void initRTC();
 	//Misc
-	void printByteA(volatile uint8_t* data);
-	void printString(String data);
+	//void printByteA(volatile uint8_t* data);
+	//void printString(String data);
 	//String getTokValue(String data, char separator, int index);
-	char* splitString(String text, char splitChar, int ind);
-	int countSplitCharacters(String text, char splitChar);
+	//char* splitString(String text, char splitChar, int ind);
+	//int countSplitCharacters(String text, char splitChar);
 	//===============================================================================
 	
 	//VARIABLES
 	ioChangeCallbackT callback;
 	analogCallbackT a_callback;
-	Conversions conversions;
+	//Conversions conversions;
     #ifdef USE_DBG_SOFT
         SoftwareSerial DbgSer;
     #endif
 	
-	char* topic;
-	char* payload;
-	int payloadLength;
-	char topicOut[31];
-	char payloadOut[31];
-	int payloadLengthOut;
+	char topicIn30[TOPIC_LENGTH];
+	char payloadIn30[PAYLOAD_LENGTH];
+	char topicOut30[TOPIC_LENGTH];
+	char payloadOut30[PAYLOAD_LENGTH];
 	//bool transportIsMQTT;
 	//Configs
 	//DL config
 	//TODO since this is the RFM module
 	//AL Config
-	int al_srcNode;
-	int al_destNode;
-	int al_retries;
-	int al_confirmTimeout;
+	uint8_t al_srcNode;
+	uint8_t al_destNode;
+	uint8_t al_retries;
+	uint8_t al_confirmTimeout;
 	//Scanner
 	float scanner_period;
 	//RTC
@@ -146,27 +147,27 @@ public:
 	
 	//IO Config
 	
-	int biSize;
-	int aiSize;
-	int boLSize;
-	int boPSize;
+	uint8_t biSize;
+	uint8_t aiSize;
+	uint8_t boLSize;
+	uint8_t boPSize;
 	
 	typedef struct bi_{
 	  bi_();
 	  int id;
-	  int pinid;
-	  char* type;
+	  uint8_t pinid;
+	  char type[3];
 	  int debounce;
-	  int value;
-	  int storeValue;
+	  uint8_t value;
+	  uint8_t storeValue;
 	}Bi;
 	Bi bi[13];
 	
 	typedef struct ai_{
 	  ai_();
 	  int id;
-	  int pinid;
-	  char* type;
+	  uint8_t pinid;
+	  char type[3];
 	  int delta;
 	  int value;
 	  int storeValue;
@@ -176,18 +177,18 @@ public:
 	typedef struct boL_{
 	  boL_();
 	  int id;
-	  int pinid;
-	  char* type;
-	  int value;
-	  int storeValue;
+	  uint8_t pinid;
+	  char type[3];
+	  uint8_t value;
+	  uint8_t storeValue;
 	}BoL;
 	BoL boL[13];
 	
 	typedef struct boP_{
 	  boP_();
 	  int id;
-	  int pinid;
-	  char* type;
+	  uint8_t pinid;
+	  char type[3];
 	  //int pulsetime;
 	  int value;
 	  int storeValue;
@@ -197,19 +198,19 @@ public:
 	typedef struct to_{
 	  to_();
 	  int id;
-	  char* type;
-	  char* value;
-	  char* storeValue;
+	  char type[3];
+	  char value[20];
+	  char storeValue[20];
 	}To;
 	To to;
 	
 	typedef struct protocol_{
 		  protocol_();
-		  int srcNode;
-		  int destNode;
-		  char* objType;
-		  char* index;
-		  char* value;
+		  uint8_t srcNode;
+		  uint8_t destNode;
+		  char objType[3];
+		  char index[4];
+		  char value[20];
 		}Protocol;
 		Protocol protocol;
 

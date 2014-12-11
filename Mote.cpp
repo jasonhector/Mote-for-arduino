@@ -27,45 +27,48 @@ void Mote::init(){
 //reset the protocol variables
 	resetProtocol();
 	//reset the global topic and payload variables
-	resetTopicAndPayload();
+	resetTopicAndPayloadIn();
 	resetTopicAndPayloadOut();
 	
 	setupIo();
 	}
 void Mote::AL_encode(char* objType, int index){
 	//dbgln(F("Mote::AL_encode: ..."));
-	dbgF("Mote::AL_encode: object type = ");
-	dbgln(objType);
-	if((String(objType)=="@I")||(String(objType)=="@S")){ 	
+	//dbgF("Mote::AL_encode: object type = ");
+	//dbgln(objType);
+	if((strcmp(objType,"@I")==0)||(strcmp(objType,"@S")==0)){ 	
 		//dbglnF("Mote::AL_encode: post objType checking");
 		//make topic
-		String str = String(al_srcNode)+"/"+String(al_destNode)+"/"+objType+"/"+bi[index].id;
+		//String str = String(al_srcNode)+"/"+String(al_destNode)+"/"+objType+"/"+bi[index].id;
+		snprintf(topicOut30, TOPIC_LENGTH, "%d/%d/%s/%d",al_srcNode,al_destNode,objType,bi[index].id);
 		//dbg(String("Mote::AL_encode: str<topic>="));
 		//Serial.println(str);
-		str.toCharArray(this->topicOut,str.length()+1);
-		dbgF("Mote::AL_encode: topicOut=");
-		dbgln(this->topicOut);
+		//str.toCharArray(this->topicOut30,str.length()+1);
+		dbgF("Mote::AL_encode: topicOut30=");
+		dbgln(this->topicOut30);
 		//make payload
-		String str2 = String(bi[index].value);
-		str2.toCharArray(this->payloadOut,str2.length()+1);
-		dbgF("Mote::AL_encode: payloadOut=");
-		dbgln(this->payloadOut);
-		this->payloadLengthOut = conversions.size(this->payloadOut);	
-	}else if(String(objType)=="@A"){
+		//String str2 = String(bi[index].value);
+		//str2.toCharArray(this->payloadOut30,str2.length()+1);
+		snprintf(payloadOut30, PAYLOAD_LENGTH, "%d",bi[index].value);
+		dbgF("Mote::AL_encode: payloadOut30=");
+		dbgln(this->payloadOut30);
+	}else if(strcpy(objType,"@A")==0){
 		//make topic
-		String str = String(al_srcNode)+"/"+String(al_destNode)+"/"+objType+"/"+ai[index].id;
-		str.toCharArray(this->topicOut,str.length()+1);
-		dbgF("Mote::AL_encode: topicOut=");
-		dbgln(this->topicOut);
+		//String str = String(al_srcNode)+"/"+String(al_destNode)+"/"+objType+"/"+ai[index].id;
+		//str.toCharArray(this->topicOut30,str.length()+1);
+		snprintf(topicOut30, TOPIC_LENGTH, "%d/%d/%s/%d",al_srcNode,al_destNode,objType,ai[index].id);
+		dbgF("Mote::AL_encode: topicOut30=");
+		dbgln(this->topicOut30);
 		//make payload
-		String str2 = String(ai[index].value);
-		str2.toCharArray(this->payloadOut,str2.length()+1);
-		this->payloadLengthOut = conversions.size(this->payloadOut);
-		dbgF("Mote::AL_encode: payloadOut=");
-		dbgln(this->payloadOut);	
+		//String str2 = String(ai[index].value);
+		//str2.toCharArray(this->payloadOut30,str2.length()+1);
+		snprintf(payloadOut30, PAYLOAD_LENGTH, "%d",ai[index].value);
+		dbgF("Mote::AL_encode: payloadOut30=");
+		dbgln(this->payloadOut30);	
 	}	
 }
-bool Mote::AL_decode(const char* topic,const char* payload){
+bool Mote::AL_decode(char* topic,char* payload){
+	//dbglnF("Mote::AL_decode: ...");
 	//Decode topic and payload into system variable protocol struct c/o src,dest,objType, index, value - old rxFromNetwork
 	//topic = "1/2/$P/151";
 	//payload = "1000";
@@ -119,11 +122,10 @@ bool Mote::AL_decode(const char* topic,const char* payload){
 	
 	//char* p=const_cast<char*>(topic);
 	
-	///*** My gut feeling is that topic is not null terminated - hence strcpy and strlen wont work!!! 
-	uint8_t topicSize = conversions.size(const_cast<char*>(topic));
+	//uint8_t topicSize = conversions.size(const_cast<char*>(topic));
 	//char* temptop = strncpy(temptop,topic, 11);//strlen(topic));
-	char temptop[topicSize+1];//sizeof(topic)];
-	memcpy(temptop, topic, topicSize+1);//sizeof(topic)+1);
+	//char temptop[topicSize+1];//sizeof(topic)];
+	//memcpy(temptop, topic, topicSize+1);//sizeof(topic)+1);
 	//snprintf(array2, destination_size, "%s", array1);
 	//dbg(F("Mote::AL_decode: topic size ="));
 	//dbgln(conversions.size(const_cast<char*>(topic)));
@@ -132,16 +134,17 @@ bool Mote::AL_decode(const char* topic,const char* payload){
 	char* p=const_cast<char*>(topic);//temptop;
 	char* str;
 	int count=0;
-	char* parts[4];			//srcNode, destNode, objType, index
-	
+	char parts[4][4];//TOPIC_LENGTH];			//srcNode, destNode, objType, index
 	while ((str = strtok_r(p,"/",&p)) != NULL){
-		parts[count] = str;
+		//parts[count] = str;
+		snprintf(parts[count],4,"%s\0",str);		//can never be greater than 4
+		//strcpy(parts[count],str,TOPIC_LENGTH);		//can never be greater than TOPIC_LENGTH
 		//Serial.print("[");
 		//Serial.print(parts[count]);
 		//Serial.print("]");
 		count++;
 	}
-	/*
+	
 	dbg(F("Mote::AL_decode: parts[0]= "));
 	dbgln(parts[0]);
 	dbg(F("Mote::AL_decode: parts[1]= "));
@@ -150,23 +153,24 @@ bool Mote::AL_decode(const char* topic,const char* payload){
 	dbgln(parts[2]);
 	dbg(F("Mote::AL_decode: parts[3]= "));
 	dbgln(parts[3]);
-	*/
+	
 	
 	//protocol.srcNode=conversions.charA2int(parts[0]);
 	protocol.srcNode=atoi(parts[0]);
 	protocol.destNode=atoi(parts[1]);//conversions.charA2int(parts[1]);
-	protocol.objType=parts[2];
-	protocol.index=parts[3];
+	strcpy(protocol.objType,parts[2]);
+	strcpy(protocol.index,parts[3]);
 	
-	uint8_t payloadSize = conversions.size(const_cast<char*>(payload));
-	char temPayload[payloadSize+1];
-	memcpy(temPayload, payload, payloadSize+1);
-	protocol.value = const_cast<char*>(payload); //temPayload
-	dbgF("Mote::AL_decode: payload size =");
-	dbgln(payloadSize);//conversions.size(const_cast<char*>(payload)));
+	//uint8_t payloadSize = conversions.size(const_cast<char*>(payload));
+	//char temPayload[payloadSize+1];
+	//memcpy(temPayload, payload, payloadSize+1);
+	//protocol.value = const_cast<char*>(payload); //temPayload
+	strcpy(protocol.value, payload);
+	//dbgF("Mote::AL_decode: payload size =");
+	//dbgln(payloadSize);//conversions.size(const_cast<char*>(payload)));
 	dbgF("Mote::AL_decode: payload=");//temPayload="));
 	dbgln(payload);//(String(payload)).toInt());//payload);
-	
+	/*
 	dbgF("Mote::AL_decode: srcNode= ");
 	dbgln(protocol.srcNode);
 	dbgF("Mote::AL_decode: destNode: ");
@@ -177,26 +181,18 @@ bool Mote::AL_decode(const char* topic,const char* payload){
 	dbgln(protocol.index);
 	dbgF("Mote::AL_decode: value: ");
 	dbgln(protocol.value);//(String(protocol.value)).toInt());
-	
+	*/
 	///check that this packet is for this node/device
 		if(protocol.destNode==al_srcNode){
 			///check that this packet is from the intended src
 			if(protocol.srcNode==al_destNode){
 				///check that index is not negative - MAKE ME
-				dbglnF("Mote::execute: validMsg: post src and dst check");
+				//dbglnF("Mote::AL_decode: validMsg: post src and dst check");
 				if(atoi(protocol.index)>0){//conversions.charA2int(protocol.index)>0){
-					dbglnF("Mote::execute: validMsg: post index>0 check");
+					//dbglnF("Mote::AL_decode: validMsg: post index>0 check");
 					//check that it is a control msg ie. objType = $P or $L - mod on old execute
 					if(strcmp(protocol.objType,"$P")==0 || strcmp(protocol.objType,"$L")==0){
-						dbglnF("Mote::execute: validMsg: post control objType check");
-						//if all checks ok then:
-						//return true so that execute can call IoFactory.setValue()
-						//Serial.print("Mote::Transcoder_Decode: global decodedObjType: ");
-						//Serial.println(decodedObjType);
-						//Serial.print("Mote::Transcoder_Decode: global decodedIndex: ");
-						//Serial.println(decodedIndex);
-						//Serial.print("Mote::Transcoder_Decode: global decodedValue: ");
-						//Serial.println(decodedValue);
+						//dbglnF("Mote::AL_decode: validMsg: post control objType check");
 						return true;
 					}else{
 						return false;
@@ -212,7 +208,9 @@ bool Mote::AL_decode(const char* topic,const char* payload){
 			}
 	//}
 }
-void Mote::execute(const char* topic,const char* payload){
+void Mote::execute(char* topic,char* payload){
+	//strcpy(topic, "1/10/$L/101\0");
+	//strcpy(payload, "1\0");
 	//copy arrays
 	//strcpy(this->topic, topic);//,strlen(topic));
 	//this->topic = const_cast<char*>(topic);
@@ -231,19 +229,23 @@ void Mote::execute(const char* topic,const char* payload){
 	dbgF("Mote::execute: Valid received Msg =");
 	dbgln(validMsg);
 	if(validMsg){
-		if(String(protocol.objType)=="$L"){
-			Controller_latch(conversions.charA2int(protocol.index), String(protocol.value));
-		}else if(String(protocol.objType)=="$P"){
-			Controller_pulse(conversions.charA2int(protocol.index), String(protocol.value));
+		if(strcmp(protocol.objType,"$L")==0){
+			Controller_latch(atoi(protocol.index), atoi(protocol.value));
+		}else if(strcmp(protocol.objType,"$P")==0){
+			Controller_pulse(atoi(protocol.index), atoi(protocol.value));
+		}else{
+			dbglnF("Mote::execute: ObjType not a Control Type!!");
+			dbg("Mote::execute: protocol.objType=");
+			dbgln(protocol.objType);
 		}
 	}
 	//reset the protocol variables
 	resetProtocol();
 	//reset the global topic and payload variables
-	resetTopicAndPayload();
+	resetTopicAndPayloadIn();
 }
-void Mote::DL_sendToNetwork(){}
-void Mote::IoFactory_getValue(){}
+//void Mote::DL_sendToNetwork(){}
+//void Mote::IoFactory_getValue(){}
 bool Mote::Scanner_isOutsideDebounce(int index, int id){
 	//wait debounce time
 	for(int j=0;j<biSize;j++){
@@ -266,9 +268,9 @@ bool Mote::Scanner_isOutsideDelta(int value, int storeValue, int delta){
 	return false;
 	}
 }
-void Mote::Controller_pulse(int index, String value){
+void Mote::Controller_pulse(int index, int value){
 		dbgF("Mote::Controller_pulse: value= ");
-		dbgln(value.toInt());
+		dbgln(value);
 		for(int j=0;j<boPSize;j++){//sizeof(bolA);j++){
 			//Serial.println("Mote::IoFactory_setValue: pre if(index) ");
 			//Serial.print("Mote::IoFactory_setValue: bolA[j].id ");
@@ -288,9 +290,9 @@ void Mote::Controller_pulse(int index, String value){
 				dbgF(" with value ");
 				dbgln(boP[j].value);
 				dbgF("For this long [ms] : ");
-				dbgln(value.toInt());//((String(value)).toInt()));
+				dbgln(value);//((String(value)).toInt()));
 				//now wait this amount of time before finishing
-				delay(value.toInt());
+				delay(value);
 				//FINISH SEQUENCE
 				boP[j].value= nowState;
 				boP[j].storeValue=boP[j].value;
@@ -304,9 +306,9 @@ void Mote::Controller_pulse(int index, String value){
 			}
 		}
 }
-void Mote::Controller_latch(int index, String value){
+void Mote::Controller_latch(int index, int value){
 			dbgF("Mote::Controller_latch: value= ");
-			dbgln(value.toInt());
+			dbgln(value);
 			for(int j=0;j<boLSize;j++){//sizeof(bolA);j++){
 			//Serial.println("Mote::IoFactory_setValue: pre if(index) ");
 			//Serial.print("Mote::IoFactory_setValue: bolA[j].id ");
@@ -318,14 +320,14 @@ void Mote::Controller_latch(int index, String value){
 			//>>>>>>
 				//bolA[j].value=value OR digitalWrite(bolA[j].pinid) OR both!!
 				//DO BOTH
-				boL[j].value=value.toInt();
+				boL[j].value=value;
 				boL[j].storeValue=boL[j].value;
 				digitalWrite(boL[j].pinid, boL[j].value);
 				
 				dbgF("Mote::Controller_latch: digitalWrite Executed on pin ");
 				dbg(boL[j].pinid);
 				dbgF(" with value ");
-				dbgln(value.toInt());
+				dbgln(value);
 			}
 		}
 
@@ -355,6 +357,7 @@ void Mote::setupIo(){
     }
 	
 }
+/*
 void Mote::printByteA(volatile uint8_t* data){		
 		char* cha = (char*)data;
 		String str = String(cha);
@@ -382,10 +385,11 @@ void Mote::printString(String data){
            }
            dbglnF("");
 	}
+	*/
 Mote::bi_::bi_(){
 	id=-1;
 	pinid=-1;
-	type="";
+	strcpy(type,"\0");
 	debounce=-1;
 	storeValue=-1;
 	}
@@ -393,51 +397,50 @@ Mote::ai_::ai_(){
 
 	id=-1;
 	pinid=-1;
-	type="@A";
+	strcpy(type,"@A\0");
 	delta=-1;
 	storeValue=-1;
 	}
 Mote::boL_::boL_(){
 	id=-1;
 	pinid=-1;
-	type="$L";
+	strcpy(type,"$L\0");
 	storeValue=-1;
 	}
 Mote::boP_::boP_(){
 	id=-1;
 	pinid=-1;
-	type="$P";
+	strcpy(type,"$P\0");
 	//pulsetime=-1;
 	storeValue=-1;
 	}
 Mote::to_::to_(){
 	id=201;
-	type="$T";
-	storeValue="1970-01-01-00-00-00";
+	strcpy(type,"$T\0");
+	strcpy(storeValue,"1970-01-01-00-00-00\0");
 	}
 Mote::protocol_::protocol_(){
 	srcNode = -1;
 	destNode = -1;
-	objType="-1";
-	index="-1";
-	value="-1";
+	strcpy(objType,"-1\0");
+	strcpy(index,"-1\0");
+	strcpy(value,"-1\0");
 	}	
 void Mote::resetProtocol(){
 	protocol.srcNode = -1;
 	protocol.destNode = -1;
-	protocol.objType="-1";
-	protocol.index="-1";
-	protocol.value="-1";
+	strcpy(protocol.objType,"-1\0");
+	strcpy(protocol.index,"-1\0");
+	strcpy(protocol.value,"-1\0");
 }
-void Mote::resetTopicAndPayload(){
-	this->topic = "";
-	this->payload = "";
-	this->payloadLength = -1;
+void Mote::resetTopicAndPayloadIn(){
+	strcpy(this->topicIn30,"\0");
+	strcpy(this->payloadIn30,"\0");
+
 }
 void Mote::resetTopicAndPayloadOut(){
-	String("").toCharArray(this->topicOut,32);
-	String("").toCharArray(this->payloadOut,32);
-	this->payloadLengthOut = -1;
+	strcpy(this->topicOut30,"\0");
+	strcpy(this->payloadOut30,"\0");
 }
 void Mote::scanIo(){
 	//HERE//
@@ -454,8 +457,13 @@ void Mote::scanIo(){
 		//dbgln("Mote::scanIo:post bi.value != bi.storeValue");
 			//if outside debounce
 			if(Scanner_isOutsideDebounce(j, bi[j].id)){
-				//dbgln("Mote::scanIo: post debounce");
-
+				//dbglnF("Mote::scanIo: post debounce");
+				//dbgF("Mote::scanIo: [storeValue][currentValue]=[");
+				//dbg(bi[j].storeValue);
+				//dbgF("][");
+				//dbg(bi[j].value);
+				//dbglnF("]");
+				
 				//dbgF("Mote::scanIo: bi type = ");
 				//dbgln(bi[j].type);
 
@@ -463,15 +471,15 @@ void Mote::scanIo(){
 				bi[j].storeValue=bi[j].value;
 				//encode and write to transport/network
 				AL_encode(bi[j].type,j);
-				//char topicOut[this->topicOut.length()+1];
-				//char payloadOut[this->payloadOut.length()+1];
-				//this->topicOut.toCharArray(topicOut,this->topicOut.length()+1);
-				//this->payloadOut.toCharArray(payloadOut,this->payloadOut.length()+1);
-				dbg(F("Mote::scanIo: local topicOut="));
-				dbgln(this->topicOut);
-				dbg(F("Mote::scanIo: local payloadOut="));
-				dbgln(this->payloadOut);
-				this->callback(this->topicOut, this->payloadOut, this->payloadLengthOut);
+				//char topicOut30[this->topicOut30.length()+1];
+				//char payloadOut30[this->payloadOut30.length()+1];
+				//this->topicOut30.toCharArray(topicOut30,this->topicOut30.length()+1);
+				//this->payloadOut30.toCharArray(payloadOut30,this->payloadOut30.length()+1);
+				dbg(F("Mote::scanIo: local topicOut30="));
+				dbgln(this->topicOut30);
+				dbg(F("Mote::scanIo: local payloadOut30="));
+				dbgln(this->payloadOut30);
+				this->callback(this->topicOut30, this->payloadOut30);
 			}
 		}
 	}
@@ -496,16 +504,16 @@ void Mote::scanIo(){
 			ai[j].storeValue=ai[j].value;
 			//encode and write to transport/network
 			AL_encode(ai[j].type,j);
-			dbg(F("Mote::scanIo: local topicOut="));
-			dbgln(this->topicOut);
-			dbg(F("Mote::scanIo: local payloadOut="));
-			dbgln(this->payloadOut);
-			this->callback(this->topicOut, this->payloadOut, this->payloadLengthOut);
+			dbg(F("Mote::scanIo: local topicOut30="));
+			dbgln(this->topicOut30);
+			dbg(F("Mote::scanIo: local payloadOut30="));
+			dbgln(this->payloadOut30);
+			this->callback(this->topicOut30, this->payloadOut30);
 		}
 	}
 	resetTopicAndPayloadOut();
 }
-void Mote::watchdogCheck(){}
+//void Mote::watchdogCheck(){}
 //void Mote::initRTC(){
 	//TODO init the RTC here
 	// following line sets the RTC to the date & time this sketch was compiled
@@ -525,27 +533,27 @@ void Mote::setCallbackAnalog(analogCallbackT callback)
 void Mote::addBi(int id, int pinid, char* objType, int debounce){	
 	bi[biSize].id=id;
 	bi[biSize].pinid=pinid;
-	bi[biSize].type=objType;
+	strcpy(bi[biSize].type,objType);
 	bi[biSize].debounce=debounce;
 	biSize++;
 }
 void Mote::addAi(int id, int pinid,int delta){	
 	ai[aiSize].id=id;
 	ai[aiSize].pinid=pinid;
-	ai[aiSize].type="@A";
+	strcpy(ai[aiSize].type,"@A\0");
 	ai[aiSize].delta=delta;
 	aiSize++;
 }
 void Mote::addBoL(int id, int pinid){	
 	boL[boLSize].id=id;
 	boL[boLSize].pinid=pinid;
-	boL[boLSize].type="$P";
+	strcpy(boL[boLSize].type,"$P\0");
 	boLSize++;
 }
 void Mote::addBoP(int id, int pinid){	
 	boP[boPSize].id=id;
 	boP[boPSize].pinid=pinid;
-	boP[boPSize].type="$L";
+	strcpy(boP[boPSize].type,"$L\0");
 	boPSize++;
 }
 /*
